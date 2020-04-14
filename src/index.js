@@ -1,9 +1,12 @@
+require('dotenv').config();
 const http = require('http');
 const httpProxy = require('http-proxy');
 const url = require('url');
 const service = require('./service');
 
+const { PORT } = process.env;
 
+// proxy options
 const option = {
     target: '',
     followRedirects: true,
@@ -11,29 +14,57 @@ const option = {
     changeOrigin: true,
 };
 
+// proxy server
 const proxy = httpProxy.createProxyServer();
 
+/**
+ * @description Listen for the `error` event on `proxy`
+ */
+proxy.on('error', (err, req, res) => {
+    res.writeHead(500, {
+        'Content-Type': 'text/plain',
+    });
 
+    res.end('Something went wrong.');
+});
+
+/**
+ * @description Listen for the `data` event on `proxy`
+ */
 proxy.on('proxyRes', (proxyRes, req, res) => {
     let body = [];
+
     proxyRes.on('data', (chunk) => {
         body.push(chunk);
     });
+
     proxyRes.on('end', async () => {
         body = Buffer.concat(body);
-        res.setHeader('Cache-control', 'no-cache');
-        // res.setHeader('Content-Encoding', 'gzip');
-        const result = await service.alterContent(body);
-        res.setHeader('Content-length', result.length);
-        res.end(result);
+        try {
+            const result = await service.alterContent(body);
+            res.setHeader('Cache-control', 'no-cache');
+            res.setHeader('Content-Encoding', 'gzip');
+            res.setHeader('Content-length', result.length);
+            res.end(result);
+        } catch (error) {
+            console.error(error);
+        }
     });
 });
 
-http.createServer((req, res) => {
+/**
+ * @description Creates http server
+ */
+const server = http.createServer((req, res) => {
     const { query } = url.parse(req.url, true);
 
+    // for avoiding errors on second server request and correct re-assigning target property
     if (query.host) {
         option.target = query.host;
     }
     proxy.web(req, res, option);
-}).listen(3000);
+});
+
+server.listen(PORT);
+
+console.log(`server listening port ${PORT}`);
