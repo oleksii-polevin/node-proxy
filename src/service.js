@@ -31,8 +31,9 @@ async function alterContent(content) {
                     zlib.gzip(changedContent, (error, result) => {
                         if (error) {
                             reject(error);
+                        } else {
+                            resolve(result);
                         }
-                        resolve(result);
                     });
                 }
             },
