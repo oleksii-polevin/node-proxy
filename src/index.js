@@ -4,7 +4,7 @@ const httpProxy = require('http-proxy');
 const url = require('url');
 const service = require('./service');
 
-const { PORT } = process.env;
+const port = process.env.PORT || 5000;
 
 // proxy options
 const option = {
@@ -65,6 +65,6 @@ const server = http.createServer((req, res) => {
     proxy.web(req, res, option);
 });
 
-server.listen(PORT);
+server.listen(port);
 
-console.log(`server listening port ${PORT}`);
+console.log(`server listening port ${port}`);
