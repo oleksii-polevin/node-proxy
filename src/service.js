@@ -14,31 +14,56 @@ function helloWorld(content) {
 }
 
 /**
+ * Compressed content with gzip method
+ * @async
+ * @param {Buffer} buffer page content
+ * @returns {Promise< gzip >} compressed content
+ */
+async function compression(buffer) {
+    return new Promise((resolve, reject) => {
+        const changedContent = helloWorld(buffer.toString());
+        zlib.gzip(changedContent, (error, result) => {
+            if (error) {
+                return reject(error);
+            }
+            return resolve(result);
+        });
+    });
+}
+
+/**
  * Decompress content, alter it and compress
  * @async
  * @param {'gz'} content
  * @returns {Promise< gzip >} compressed and altered content
  */
-async function alterContent(content) {
-    return new Promise((resolve, reject) => {
-        zlib.unzip(
-            content,
-            (err, buffer) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    const changedContent = helloWorld(buffer.toString());
-                    zlib.gzip(changedContent, (error, result) => {
-                        if (error) {
-                            reject(error);
-                        } else {
-                            resolve(result);
-                        }
-                    });
-                }
-            },
-        );
-    });
+async function alterContent(content, encoding) {
+    if (encoding === 'br') {
+        return new Promise((resolve, reject) => {
+            zlib.brotliDecompress(
+                content,
+                (err, buffer) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(compression(buffer));
+                },
+            );
+        });
+    } if (encoding === 'gzip' || encoding === 'deflate') {
+        return new Promise((resolve, reject) => {
+            zlib.unzip(
+                content,
+                (err, buffer) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(compression(buffer));
+                },
+            );
+        });
+    }
+    return content;
 }
 
 module.exports = {

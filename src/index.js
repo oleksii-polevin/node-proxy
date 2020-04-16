@@ -41,7 +41,8 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
     proxyRes.on('end', async () => {
         body = Buffer.concat(body);
         try {
-            const result = await service.alterContent(body);
+            const encoding = proxyRes.headers['content-encoding'];
+            const result = await service.alterContent(body, encoding);
             res.setHeader('Cache-control', 'no-cache');
             res.setHeader('Content-Encoding', 'gzip');
             res.setHeader('Content-length', result.length);
@@ -57,7 +58,6 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
  */
 const server = http.createServer((req, res) => {
     const { query } = url.parse(req.url, true);
-
     // for avoiding errors on second server request and correct re-assigning target property
     if (query.host) {
         option.target = query.host;
