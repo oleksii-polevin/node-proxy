@@ -25,7 +25,7 @@ proxy.on('error', (err, req, res) => {
         'Content-Type': 'text/plain',
     });
 
-    res.end('Something went wrong.');
+    res.end(`Something went wrong: ${err.message}`);
 });
 
 /**
